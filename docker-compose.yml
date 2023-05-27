@@ -1,0 +1,55 @@
+version: '2'
+
+services:
+  db:
+      image: postgres
+      environment:
+        - POSTGRES_DB=postgres
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=drew@ece
+      ports:
+        - "5432:5432"
+      volumes:
+            - data-volume:/var/lib/postgresql/data
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: 651@duke.edu
+      PGADMIN_DEFAULT_PASSWORD: 651651651
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    logging:
+      driver: "none"
+  server:
+      build: .
+      image: server:citest
+      command: ./gradlew bootRun
+      ports:
+        - "12345:12345"
+      volumes:
+        - .:/code
+      expose:
+        - "12345"
+      depends_on:
+        - db
+      environment:
+        - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+        - SPRING_DATASOURCE_USERNAME=postgres
+        - SPRING_DATASOURCE_PASSWORD=drew@ece
+        - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+  client:
+      build:
+        context: ./frontend
+      container_name: react-ui
+      ports:
+        - "3000:3000"
+      volumes:
+        - ./frontend:/usr/src/app/frontend
+        - /usr/src/app/frontend/node_modules
+      depends_on:
+        - server
+volumes:
+   data-volume:
